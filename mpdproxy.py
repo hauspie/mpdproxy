@@ -41,7 +41,6 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
                 # First seen file, generate a new Id and store it in the proxy file->id mapping
                 if processing_file not in self.file_id_map:
                     self.file_id_map[processing_file] = self.generate_file_id(processing_file)
-                print("Server: {}, File: {}, Id: {} -> {}".format(server['addr'],processing_file, id, self.file_id_map[processing_file]))
                 # Rewrite response with this Id
                 new_response = new_response + "Id: {}\n".format(self.file_id_map[processing_file])
                 # Remember the original Id for this server
@@ -63,9 +62,7 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
         The id is the one extracted from the command that we need to send to servers
         so the id must be translated according to each server
         """
-        print(id, server['addr'])
         id = int(id.strip('"').rstrip('"'))
-        print("Trying to translate ", id)
         file = self.id_to_file(id)
         if file in server['file_ids']:
             newid = server['file_ids'][file]
@@ -82,6 +79,9 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
                 if tid:
                     new_command = new_command + "playid {}\n".format(tid)
                     continue
+            if cmd_args[0] == 'clear': # clear map
+                self.file_id_map = {}
+                server['file_ids'] = {}
             new_command = new_command + line + "\n"
         return new_command
 
