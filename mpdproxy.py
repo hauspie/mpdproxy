@@ -5,6 +5,8 @@ import sys
 import select
 import socketserver
 
+from modules import mpdclient
+
 config_servers = [
     {
         "host": "127.0.0.1",
@@ -26,53 +28,11 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
 
     servers = config_servers
 
-    def get_server_version(self, host, port):
-        try:
-            s = socket.create_connection((host, port))
-        except OSError as e:
-            sys.stderr.write("Failed to connect to {}:{}: {}\n".format(server["host"], server["port"], e))
-            return 'ACK\n'
-        s.settimeout(2)
-        with s.makefile(mode='rw', buffering=1) as f:
-            response = f.readline()
-            return response
-
-    def send_command_to_server(self, cmd, host, port):
-        """Sends a command to a mpd server and return its response.  This command
-        is blocking (connects to the server, send command, gets response
-        and close connection)
-        """
-        if cmd == "idle\n":
-            return ''
-        if cmd == "noidle\n":
-            return 'OK\n'
-        try:
-            s = socket.create_connection((host, port))
-        except OSError as e:
-            sys.stderr.write("Failed to connect to {}:{}: {}\n".format(server["host"], server["port"], e))
-            return 'KO\n'
-        s.settimeout(2)
-        with s.makefile(mode='rw', buffering=1) as f:
-            response = f.readline()
-            print(response)
-            # Send command
-            f.write(cmd)
-            # Get answer
-            response = ''
-            while True:
-                line = f.readline()
-                response = response + line
-                if not line or line.startswith("OK") or line.startswith("ACK"):
-                    break
-        s.shutdown(socket.SHUT_RDWR)
-        s.close()
-        return response
-
     def process_command(self, command):
         # pass the command to servers
         print("Sending command: {}\n".format(command))
         for server in self.servers:
-            response = self.send_command_to_server(command, server['host'], server['port'])
+            response = mpdclient.send_command((server['host'], server['port']), command)
         self.wfile.write(response.encode())
         
                     
@@ -80,7 +40,11 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
     def handle(self):
         print("Connection from {}\n".format(self.request.getpeername()))
         for server in self.servers:
-            version = self.get_server_version(server['host'], server['port'])
+            version = mpdclient.get_server_version((server['host'], server['port']))
+
+        # Send the version of the last server of the list
+        # TODO: may be better to send the lowest version number so that
+        # the client only uses commands compatible with all servers
         self.wfile.write(version.encode())
         command_list_started = False
         cmd = ''
