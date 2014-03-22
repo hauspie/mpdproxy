@@ -36,8 +36,8 @@ Features
   clients that rely on this command.
 
 - The MPD version announced by the proxy is the lowest version number
-  of all controlled servers. This should make the clients to limit
-  their command use to a subset that is understood by all controlled
+  of all controlled servers. This should limit the clients
+  to commands that are understood by all controlled
   servers.
 
 Usage
