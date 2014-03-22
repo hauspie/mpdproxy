@@ -40,6 +40,8 @@ Features
   to commands that are understood by all controlled
   servers.
 
+- Tested with `mpc` `gmpc` clients.
+
 Usage
 =====
 
@@ -54,6 +56,8 @@ The command has a help message that should be quite self-explanatory:
                             specified several times to control more servers
       -b BIND, --bind BIND  Bind address using the form addr[:port]. Defaults to
                             0.0.0.0:6601
+
+After launching the proxy, simply connect to it using your favorite MPD client.
 
 Future features (hopefuly)
 ==========================
