@@ -32,7 +32,6 @@ def send_command(host, command):
     def send_command(s):
         with s.makefile(mode='rw', buffering=1) as f:
             response = f.readline()
-            print(response)
             # Send command
             f.write(command)
             # Get answer
