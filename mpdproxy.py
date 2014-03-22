@@ -9,8 +9,6 @@ from modules import mpdclient
 config_servers = []
 
 
-# Now create the server
-
 class MPDProxyHandler(socketserver.StreamRequestHandler):
     global config_servers
     servers = config_servers
@@ -74,11 +72,36 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
         new_command = ''
         for line in command.splitlines():
             cmd_args = line.split(' ')
-            if cmd_args[0] == 'playid': # playid SONGID
-                tid = self.translate_id(server, cmd_args[1])
-                if tid:
-                    new_command = new_command + "playid {}\n".format(tid)
-                    continue
+            try: # If the command does not have what is expected here, just ignore the rewriting and use it raw
+                if cmd_args[0] == 'playid': # playid SONGID
+                    tid = self.translate_id(server, cmd_args[1])
+                    if tid:
+                        new_command = new_command + "playid {}\n".format(tid)
+                        continue
+                if cmd_args[0] == 'seekid': # seekid SONGID TIME
+                    tid = self.translate_id(server, cmd_args[1])
+                    if tid:
+                        new_command = new_command + "seekid {} {}\n".format(tid, cmd_args[2])
+                        continue
+                if cmd_args[0] == 'deleteid': # deleteid SONGID
+                    tid = self.translate_id(server, cmd_args[1])
+                    if tid:
+                        new_command = new_command + "deleteid {}\n".format(tid, cmd_args[2])
+                        continue
+                if cmd_args[0] == 'playlistid': # playlistid SONGID (optional SONGID)
+                    if len(cmd_args) >= 1:
+                        tid = self.translate_id(server, cmd_args[1])
+                        if tid:
+                            new_command = new_command + "playlistid {}\n".format(tid)
+                            continue
+                if cmd_args[0] == 'playlistmove': # playlistmove {NAME} {SONGID} {SONGPOS}
+                    tid = self.translate_id(server, cmd_args[2])
+                    if tid:
+                        new_command = new_command + "playlistmove {} {} {}\n".format(cmd_args[1], tid, cmd_args[3])
+                        continue
+                # addtagid and cleartagid are not implemented on purpose
+            except:
+                pass
             if cmd_args[0] == 'clear': # clear map
                 self.file_id_map = {}
                 server['file_ids'] = {}
