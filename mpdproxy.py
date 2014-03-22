@@ -1,38 +1,25 @@
 #!/usr/bin/python
 
 import socket
-import sys
-import select
 import socketserver
+import argparse
 
 from modules import mpdclient
 
-config_servers = [
-    {
-        "host": "music",
-        "port": 6600
-    },
-    {
-        "host": "127.0.0.1",
-        "port": 6600
-    },
-    ]
-
-
-local_port = 6601
+config_servers = []
 
 
 # Now create the server
 
 class MPDProxyHandler(socketserver.StreamRequestHandler):
-
+    global config_servers
     servers = config_servers
 
     def process_command(self, command):
         # pass the command to servers
         print("Sending command: {}\n".format(command))
         for server in self.servers:
-            response = mpdclient.send_command((server['host'], server['port']), command)
+            response = mpdclient.send_command(server, command)
         self.wfile.write(response.encode())
         
                     
@@ -41,7 +28,7 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
         print("Connection from {}\n".format(self.request.getpeername()))
         versions = []
         for server in self.servers:
-            versions.append(mpdclient.get_server_version((server['host'], server['port'])))
+            versions.append(mpdclient.get_server_version(server))
 
         # Send the version of the last server of the list
         # TODO: may be better to send the lowest version number so that
@@ -72,6 +59,32 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
 class MPDProxyServer(socketserver.TCPServer):
     allow_reuse_address = True
 
-                                
-server = MPDProxyServer(('0.0.0.0', local_port), MPDProxyHandler)
-server.serve_forever()
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-s", "--servers", help="server to control using addr[:port] format. Can be specified several times to control more servers", action="append")
+parser.add_argument("-b", "--bind", help="Bind address using the form addr[:port]. Defaults to 0.0.0.0:6601", default="0.0.0.0:6601")
+
+args = parser.parse_args()
+
+for server in args.servers:
+    description = server.split(':')
+    host = 'localhost'
+    port = 6600
+    try:
+        host = description[0]
+        port = int(description[1])
+    except:
+        pass
+    config_servers.append((host, port))
+
+bind_description = args.bind.split(':')
+bind_addr = '0.0.0.0'
+bind_port = 6601
+try:
+    bind_addr = bind_description[0]
+    bind_port = int(bind_description[1])
+except:
+    pass
+                         
+mpd_proxy = MPDProxyServer((bind_addr, bind_port), MPDProxyHandler)
+mpd_proxy.serve_forever()
