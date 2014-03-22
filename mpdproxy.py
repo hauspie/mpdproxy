@@ -1,5 +1,23 @@
 #!/usr/bin/python
 
+# MPDProxy: Acts as a proxy to send MPD commands from a client to
+#     multiple MPD servers Copyright (C) 2014 Michaël Hauspie
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
 import socket
 import socketserver
 import argparse
@@ -8,7 +26,7 @@ from modules import mpdclient
 
 config_servers = []
 
-
+########################################################
 class MPDProxyHandler(socketserver.StreamRequestHandler):
     global config_servers
     servers = config_servers
@@ -17,9 +35,12 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
     file_id_map = {}
     
 
+    ########################################################
     def generate_file_id(self, f):
+        # TODO: will probably need to make a better SONGID generation function :)
         return len(self.file_id_map) + 1
 
+    ########################################################
     def rewrite_response(self, server, response):
         """
         Parse the response field and modify the Id field if any.
@@ -47,6 +68,7 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
                 new_response = new_response + line + '\n'
         return new_response
 
+    ########################################################
     def id_to_file(self, id):
         for file,fid in self.file_id_map.items():
             if id == fid:
@@ -54,6 +76,7 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
         return None
 
 
+    ########################################################
     def translate_id(self, server, id):
         """
         Translates an id from generated 'virtual' id to corresponding server id.
@@ -68,6 +91,7 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
         return None
             
 
+    ########################################################
     def rewrite_command(self, server, command):
         new_command = ''
         for line in command.splitlines():
@@ -108,6 +132,7 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
             new_command = new_command + line + "\n"
         return new_command
 
+    ########################################################
     def process_command(self, command):
         # pass the command to servers
         for server in self.servers:
@@ -118,6 +143,7 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
         
                     
     
+    ########################################################
     def handle(self):
         print("Connection from {}\n".format(self.request.getpeername()))
         versions = []
@@ -150,10 +176,19 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
                 self.process_command(cmd)
                 cmd = ''
 
+########################################################
 class MPDProxyServer(socketserver.TCPServer):
     allow_reuse_address = True
 
 
+########################################################
+# Command line options
+print("""
+mpdproxy  Copyright (C) 2014  Michaël Hauspie
+    This program comes with ABSOLUTELY NO WARRANTY.
+    This is free software, and you are welcome to redistribute it
+    under certain conditions.
+""")
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--servers", help="server to control using addr[:port] format. Can be specified several times to control more servers", action="append")
 parser.add_argument("-b", "--bind", help="Bind address using the form addr[:port]. Defaults to 0.0.0.0:6601", default="0.0.0.0:6601")

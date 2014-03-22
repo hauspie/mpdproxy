@@ -1,6 +1,24 @@
+# MPDProxy: Acts as a proxy to send MPD commands from a client to
+#     multiple MPD servers Copyright (C) 2014 Michaël Hauspie
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Some tool functions to connect to MPD servers
 import socket
 
 
+########################################################
 def connect_and_apply(host, function):
     """
     Connects to a MPD server and call function with the corresponding socket.
@@ -14,7 +32,11 @@ def connect_and_apply(host, function):
     s.settimeout(2)
     return function(s)
 
+########################################################
 def get_server_version(host):
+    """
+    Returns the version of an MPD server. host is an address port tuple accepted by socket.create_connection
+    """
     def get_version(s):
         with s.makefile(mode='rw', buffering=1) as f:
             response = f.readline()
@@ -24,7 +46,12 @@ def get_server_version(host):
             return version_words[2].rstrip()
     return connect_and_apply(host, get_version)
 
+
+########################################################
 def send_command(host, command):
+    """
+    Sends a command to a MPD server. host is an address port tuple accepted by socket.create_connection
+    """
     if command == "idle\n":
         return ''
     if command == "noidle\n":
