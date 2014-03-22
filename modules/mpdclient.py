@@ -18,7 +18,10 @@ def get_server_version(host):
     def get_version(s):
         with s.makefile(mode='rw', buffering=1) as f:
             response = f.readline()
-            return response
+            version_words = response.split(' ')
+            if len(version_words) < 3:
+                return ''
+            return version_words[2].rstrip()
     return connect_and_apply(host, get_version)
 
 def send_command(host, command):

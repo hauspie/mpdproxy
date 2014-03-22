@@ -9,11 +9,11 @@ from modules import mpdclient
 
 config_servers = [
     {
-        "host": "127.0.0.1",
+        "host": "music",
         "port": 6600
     },
     {
-        "host": "music",
+        "host": "127.0.0.1",
         "port": 6600
     },
     ]
@@ -39,13 +39,16 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
     
     def handle(self):
         print("Connection from {}\n".format(self.request.getpeername()))
+        versions = []
         for server in self.servers:
-            version = mpdclient.get_server_version((server['host'], server['port']))
+            versions.append(mpdclient.get_server_version((server['host'], server['port'])))
 
         # Send the version of the last server of the list
         # TODO: may be better to send the lowest version number so that
         # the client only uses commands compatible with all servers
-        self.wfile.write(version.encode())
+        versions.sort()
+        version_response = "OK MPD {}\n".format(versions[0])
+        self.wfile.write(version_response.encode())
         command_list_started = False
         cmd = ''
         while True:
