@@ -1,8 +1,8 @@
 MPDProxy
 ========
 
-MPDProxy is a mpd pseudo server which purpose is to control multiple
-mpd servers using a single client.
+MPDProxy is a MPD (http://www.musicpd.org) pseudo server which purpose
+is to control multiple mpd servers using a single client.
 
 The typical usage is controlling several audio stations (in several
 rooms, or in the same one) at once, while preserving audio
@@ -11,6 +11,11 @@ servers use the same database with the same file names.
 
 This is an alternative to having one mpd server that streams its
 content to the other ones.
+
+Requirements
+============
+- Python 3.x (tested with python 3.3.5)
+- MPD servers to control :p
 
 Features
 ========
@@ -52,6 +57,12 @@ The command has a help message that should be quite self-explanatory:
 
 Future features (hopefuly)
 ==========================
+
 - `idle` command
+
 - special handling of `outputs` command to select which servers to control/disable/enable
+
+- Measurement of the delays delta between servers to try to
+  synchronize them as much as possible. Yet, LAN and low latency is
+  assumed thus no latency compensation is done.
 

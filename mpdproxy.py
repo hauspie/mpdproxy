@@ -145,7 +145,6 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
     
     ########################################################
     def handle(self):
-        print("Connection from {}\n".format(self.request.getpeername()))
         versions = []
         for server in self.servers:
             versions.append(mpdclient.get_server_version(server['addr']))
@@ -185,9 +184,9 @@ class MPDProxyServer(socketserver.TCPServer):
 # Command line options
 print("""
 mpdproxy  Copyright (C) 2014  Michaël Hauspie
-    This program comes with ABSOLUTELY NO WARRANTY.
-    This is free software, and you are welcome to redistribute it
-    under certain conditions.
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions.
 """)
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--servers", help="server to control using addr[:port] format. Can be specified several times to control more servers", action="append")
@@ -216,4 +215,7 @@ except:
     pass
                          
 mpd_proxy = MPDProxyServer((bind_addr, bind_port), MPDProxyHandler)
-mpd_proxy.serve_forever()
+try:
+    mpd_proxy.serve_forever()
+except KeyboardInterrupt:
+    pass
