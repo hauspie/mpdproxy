@@ -7,13 +7,13 @@ import socketserver
 
 config_servers = [
     {
+        "host": "127.0.0.1",
+        "port": 6600
+    },
+    {
         "host": "music",
         "port": 6600
     },
-    # {
-    #     "host": "127.0.0.1",
-    #     "port": 6600
-    # },
     ]
 
 
@@ -26,16 +26,32 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
 
     servers = config_servers
 
+    def get_server_version(self, host, port):
+        try:
+            s = socket.create_connection((host, port))
+        except OSError as e:
+            sys.stderr.write("Failed to connect to {}:{}: {}\n".format(server["host"], server["port"], e))
+            return 'ACK\n'
+        s.settimeout(2)
+        with s.makefile(mode='rw', buffering=1) as f:
+            response = f.readline()
+            return response
+
     def send_command_to_server(self, cmd, host, port):
         """Sends a command to a mpd server and return its response.  This command
         is blocking (connects to the server, send command, gets response
         and close connection)
         """
+        if cmd == "idle\n":
+            return ''
+        if cmd == "noidle\n":
+            return 'OK\n'
         try:
             s = socket.create_connection((host, port))
         except OSError as e:
             sys.stderr.write("Failed to connect to {}:{}: {}\n".format(server["host"], server["port"], e))
-            return 'KO'
+            return 'KO\n'
+        s.settimeout(2)
         with s.makefile(mode='rw', buffering=1) as f:
             response = f.readline()
             print(response)
@@ -57,18 +73,19 @@ class MPDProxyHandler(socketserver.StreamRequestHandler):
         print("Sending command: {}\n".format(command))
         for server in self.servers:
             response = self.send_command_to_server(command, server['host'], server['port'])
-        print(response)
         self.wfile.write(response.encode())
         
                     
     
     def handle(self):
         print("Connection from {}\n".format(self.request.getpeername()))
-        self.wfile.write(b'OK MPD 0.18.0\n')
+        for server in self.servers:
+            version = self.get_server_version(server['host'], server['port'])
+        self.wfile.write(version.encode())
         command_list_started = False
         cmd = ''
         while True:
-            line = self.rfile.readline().decode("utf-8")
+            line = self.rfile.readline().decode()
             if not line:
                 return
             if line == 'command_list_begin\n' or line == 'command_list_ok_begin\n':
